@@ -5,9 +5,69 @@
         <title>WizGame</title>
         <script type='text/javascript' src='jquery-1.11.1.min.js'></script>
         <script type='text/javascript' src='wizgame.js'></script>
-        <style> body { margin: 0px; } </style>
+        <style>
+body { margin: 0px; font-family: monospace; overflow: hidden; }
+table { display: none; position: absolute; width: 100%; top: 0px; }
+.gestures { font-size: 60px; }
+        </style>
     </head>
     <body>
-
+        <!-- TODO use JS to generate this (I'm lazy though so meh) -->
+        <table><tbody>
+            <tr><td>A1:F/pP/o</td><td>Make Vulnerable[MaVu]</td><td>cancels all cold and heat resistance</td></tr>
+            <tr><td>A1:SP</td><td>Missile[Mi]</td><td>1 damage</td></tr>
+            <tr><td>A1:SSP</td><td>Heavy Missile[HeMi]</td><td>2 damage</td></tr>
+            <tr><td>A1:WF</td><td>Icicle[Ic]</td><td>2 damage unless cold resistant, does not cancel</td></tr>
+            <tr><td>A1:WS</td><td>Spark[Sp]</td><td>2 damage unless heat resistant, does not cancel</td></tr>
+            <tr><td>A2:FFHHF</td><td>Lightning Bolt[LiBo]</td><td>4 damage</td></tr>
+            <tr><td>A2:OFFW</td><td>Explosion[Ex]</td><td>3 damage</td></tr>
+            <tr><td>A2:WWOP</td><td>Fireball[Fi]</td><td>4 damage unless heat resistant, cancels with Ice Shards</td></tr>
+            <tr><td>A2:WWOS</td><td>Ice Shards[IcSh]</td><td>4 damage unless cold resistant, cancels with Fireball</td></tr>
+            <tr><td>A3:HPp,HpP</td><td>Destroy[De]</td><td>removes all creations from Creation spells</td></tr>
+            <tr><td>A3:POSC/c</td><td>Ice Storm[IcSt]</td><td>5 damage to everybody unless cold resistant, cancels with Fire Storm</td></tr>
+            <tr><td>A3:SOPC/c</td><td>Fire Storm[FiSt]</td><td>5 damage to everybody unless heat resistant, cancels with Ice Storm</td></tr>
+            <tr><td>A4:C/cFsWW</td><td>Focused Elemental Storm[FoElSt]</td><td>4 damage unless heat resistant, 4 damage unless cold resistant</td></tr>
+            <tr><td>A4:SsP</td><td>Cause Wounds[CaWo]</td><td>2 damage, difficult to block</td></tr>
+            <tr><td>A5:OHOWSSSP</td><td>Finger of Death[FiofDe]</td><td>instantly kills target</td></tr>
+            <tr><td>C1:S/fWH</td><td>Summon Ogre[SuOg]</td><td>ogre has 2 health and does 2 damage</td></tr>
+            <tr><td>C1:SWH</td><td>Summon Goblin[SuGo]</td><td>goblin has 1 health and does 1 damage</td></tr>
+            <tr><td>C2:C/cFsO</td><td>Summon Ice Elemental[SuIcEl]</td><td>elemental has 4 health and does 4 damage, cold resistant, can also be instantly destroyed by any fire spell</td></tr>
+            <tr><td>C2:C/cHsO</td><td>Summon Fire Elemental[SuFiEl]</td><td>elemental has 4 health and does 4 damage, heat resistant, can also be instantly destroyed by any ice spell</td></tr>
+            <tr><td>C2:OSWH</td><td>Summon Skeleton[SuSk]</td><td>skeleton has 3 health and does 3 damage</td></tr>
+            <tr><td>C3:HPFFC/c</td><td>Helping Hand[HeHa]</td><td>create a third hand to cast spells with for 5 turns (with 5 health)</td></tr>
+            <tr><td>C3:WOSWH</td><td>Summon Giant[SuGi]</td><td>giant has 4 health and does 4 damage</td></tr>
+            <tr><td>C4:FHHppO</td><td>Clone[Cl]</td><td>create two extra hands to cast spells with until clone (with 5 health) is destroyed by opponent</td></tr>
+            <tr><td>C5:PWHWFFFO</td><td>Endless Cloning[EnCl]</td><td>casts "Clone" every turn</td></tr>
+            <tr><td>E1:H/sS/sH</td><td>Freeze Time[FrTi]</td><td>caster immediately gets one extra action</td></tr>
+            <tr><td>E1:PSF</td><td>Anti-Spell[AnSp]</td><td>cancels all spells currently being made (target must start over any spells in the process of being cast)</td></tr>
+            <tr><td>E1:WWW</td><td>Paralysis[Pa]</td><td>freezes one hand in its current position, forcing it to stay that way for the next spell</td></tr>
+            <tr><td>E2:C/cHFF</td><td>Poison[Po]</td><td>deals 2 damage per turn until removed via any spell that specifies removal of enchantment</td></tr>
+            <tr><td>E2:OHOFC/c</td><td>Haste[Ha]</td><td>caster gets two actions per turn, for 3 turns</td></tr>
+            <tr><td>E2:PHo</td><td>Amnesia[Am]</td><td>target must repeat the actions it made in the previous turn</td></tr>
+            <tr><td>E3:FWWWC/c</td><td>Plague[Pl]</td><td>kills target in 6 turns if not cured by any spell that specifies removal of enchantment</td></tr>
+            <tr><td>E3:OSFP</td><td>Charm Wizard[ChWi]</td><td>caster is granted control of one of the target's hands / attacks, and may manipulate it in whatever way caster desires</td></tr>
+            <tr><td>E5:HSFSPPPW</td><td>Absolute Magical Energy[AbMaEn]</td><td>TODO multiplies all damage of caster's spells by 10, and divides damage of all spells on caster by 10 (rounded up)</td></tr>
+            <tr><td>N0:O/o</td><td>Surrender[Su]</td><td>immediately ends game; whoever makes this gesture loses and it applies no matter in what context the gesture was made.</td></tr>
+            <tr><td>N1:K</td><td>Stab[St]</td><td>always deals 1 point of damage regardless of other spells that turn. Effective Pow of 1; only one stab per wizard per turn</td></tr>
+            <tr><td>P1:C/cS</td><td>Chill[Ch]</td><td>provides heat resistance for 3 turns</td></tr>
+            <tr><td>P1:C/cW</td><td>Warmth[Wa]</td><td>provides cold resistance for 3 turns</td></tr>
+            <tr><td>P1:FH</td><td>Calmness[Ca]</td><td>heals 1 health point</td></tr>
+            <tr><td>P1:HHWO</td><td>Resist Heat[ReHe]</td><td>provides heat resistance until removed by opponent</td></tr>
+            <tr><td>P1:HO</td><td>Enduring Shield[EnSh]</td><td>cancels all spells cast by non-target on target with Pow of 1 or less for 3 turns</td></tr>
+            <tr><td>P1:O</td><td>Shield[Sh]</td><td>cancels all spells cast by non-target on target with Pow of 1 or less</td></tr>
+            <tr><td>P1:SSWO</td><td>Resist Cold[ReCo]</td><td>provides cold resistance until removed by opponent</td></tr>
+            <tr><td>P2:C/cH/h</td><td>Magic Mirror[MaMi]</td><td>reflects all spells cast by non-target on target with Pow of 3 or less</td></tr>
+            <tr><td>P2:FWH</td><td>Cure Wounds[CuWo]</td><td>heals 2 health points</td></tr>
+            <tr><td>P2:WFF</td><td>Anti-Magic[AnMa]</td><td>cancels all spells cast by non-target on target with Pow of 2 or less</td></tr>
+            <tr><td>P2:WPFF</td><td>Anti-Magical Aura[AnMaAu]</td><td>cancels all spells cast by non-target on target with Pow of 2 or less for 3 turns</td></tr>
+            <tr><td>P3:C/csWF</td><td>Temperature Regulation[TeRe]</td><td>provides heat and cold resistance until removed by opponent</td></tr>
+            <tr><td>P3:FWpH</td><td>Reinvigorate[Re]</td><td>heals 3 health points and removes all Enchantment spells currently taking effect on target</td></tr>
+            <tr><td>P3:HOO</td><td>Absorb Magic[AbMa]</td><td>cancels all Attack spells cast by non-target on target with Pow of 3 or less</td></tr>
+            <tr><td>P3:OPHO,OP/pO</td><td>Magic Discharge[MaDi]</td><td>removes all Enchantment spells currently taking effect on target</td></tr>
+            <tr><td>P3:PFF</td><td>Disenchantment[Di]</td><td>cancels all Enchantment spells cast by non-target on target with Pow of 3 or less</td></tr>
+            <tr><td>P4:P/pHC/cHC/c</td><td>Divine Fortification[DiFo]</td><td>heals 3 health points, cancels all Attack spells and Enchantment spells cast by non-target on target, provides heat and cold resistance until removed by opponent</td></tr>
+            <tr><td>P4:PpOH</td><td>Dispel Magic[DiMa]</td><td>cancels all Attack spells and Enchantment spells cast by non-target on target</td></tr>
+            <tr><td>P5:FOWOSSSH</td><td>Invulnerability[In]</td><td>makes target immune to damage. Can still be killed with non-damaging spells, ex. Finger of Death, Plague, self-Surrender, etc.</td></tr>
+        </tbody></table>
     </body>
 </html>
