@@ -20,22 +20,22 @@ function game() {
             right: (p == 2 ? game.PPX : undefined)
         });
     };
-    var p1 = mkp(1),
-        p2 = mkp(2),
-        p1g = mkg(1),
-        p2g = mkg(2),
-        p1as = [],
-        p2as = [];
+    var $p1 = mkp(1),
+        $p2 = mkp(2),
+        $p1gestures = mkg(1),
+        $p2gestures = mkg(2),
+        p1actions = [],
+        p2actions = [];
 
     var go = function() {
         getActions(function(p1a, p2a) {
-            p1as.push(p1a);
-            p2as.push(p2a);
-            p1g.append($('<div>').text(p1a.join(' ')));
-            p2g.append($('<div>').text(p2a.join(' ')));
+            p1actions.push(p1a);
+            p2actions.push(p2a);
+            $p1gestures.append($('<div>').text(p1a.join(' ')));
+            $p2gestures.append($('<div>').text(p2a.join(' ')));
 
-            getSpells(p1as, p2as, function(p1s, p2s) {
-                console.log(p1s, p2s);
+            getSpells(p1actions, p2actions, function(p1spells, p2spells) {
+                console.log(p1spells, p2spells);
                 go();
             });
         });
@@ -51,10 +51,16 @@ function getActions(callback) {
     $(window).on('keydown', function(e) {
         if (e.which == 38) {
             // up arrow key
-            spellList.css('top', (+spellList.css('top').slice(0, -2) - 50) + 'px');
+            spellList.css('top', (+spellList.css('top').slice(0, -2) + 50) + 'px');
         } else if (e.which == 40) {
             // down arrow key
-            spellList.css('top', (+spellList.css('top').slice(0, -2) + 50) + 'px');
+            spellList.css('top', (+spellList.css('top').slice(0, -2) - 50) + 'px');
+        } else if (e.which == 37) {
+            // left arrow key
+            spellList.css('font-size', (+spellList.css('font-size').slice(0, -2) - 1) + 'px');
+        } else if (e.which == 39) {
+            // right arrow key
+            spellList.css('font-size', (+spellList.css('font-size').slice(0, -2) + 1) + 'px');
         } else if (e.which == 32) {
             // space
             spellList.toggle('slow');
@@ -71,48 +77,51 @@ function getActions(callback) {
     });
 }
 
-function getSpells(p1as, p2as, callback) {
-    var p1s = listSpells(p1as), p2s = listSpells(p2as);
-    var p1c, p2c;
+function getSpells(p1actions, p2actions, callback) {
+    var p1spells = listSpells(p1actions), p2spells = listSpells(p2actions);
+    var p1spellnames = p1spells.slice(), p2spellnames = p2spells.slice();
+    for (var i = 0; i < p1spellnames.length; ++i) p1spellnames[i] = p1spellnames[i].name;
+    for (var i = 0; i < p2spellnames.length; ++i) p2spellnames[i] = p2spellnames[i].name;
+    var p1choice, p2choice;
 
     // argh this is ugly
-    if (p1s.length) {
+    if (p1spells.length) {
         var i = 1;
         msg('Player 1, please choose a spell to cast<br>1. ' +
-            p1s.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
+            p1spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
         $(window).on('keydown', function(e) {
             var n = e.which - 49;
-            if (p1s[n]) {
-                p1c = p1s[n];
+            if (p1spells[n]) {
+                p1choice = p1spells[n];
                 flash();
                 $(window).off('keydown');
-                if (p2s.length) {
+                if (p2spells.length) {
                     var i = 1;
                     msg('Player 2, please choose a spell to cast<br>1. ' +
-                        p2s.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
+                        p2spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
                     $(window).on('keydown', function(e) {
                         var n = e.which - 49;
-                        if (p2s[n]) {
-                            p2c = p2s[n];
+                        if (p2spells[n]) {
+                            p2choice = p2spells[n];
                             flash();
                             $(window).off('keydown');
-                            callback(p1c, p2c);
+                            callback(p1choice, p2choice);
                         }
                     });
-                } else callback(p1c, undefined);
+                } else callback(p1choice, undefined);
             }
         });
-    } else if (p2s.length) {
+    } else if (p2spells.length) {
         var i = 1;
         msg('Player 2, please choose a spell to cast<br>1. ' +
-            p2s.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
+            p2spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
         $(window).on('keydown', function(e) {
             var n = e.which - 49;
-            if (p2s[n]) {
-                p2c = p2s[n];
+            if (p2spells[n]) {
+                p2choice = p2spells[n];
                 flash();
                 $(window).off('keydown');
-                callback(undefined, p2c);
+                callback(undefined, p2choice);
             }
         });
     } else callback(undefined, undefined);
@@ -152,7 +161,7 @@ function listSpells(actions) {
                 }
             }
             // yay!
-            spells.push(game.SPELLS[i].name);
+            spells.push(game.SPELLS[i]);
             break;
         }
     }
