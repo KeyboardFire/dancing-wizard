@@ -34,8 +34,8 @@ function game() {
             $p1gestures.append($('<div>').text(p1a.join(' ')));
             $p2gestures.append($('<div>').text(p2a.join(' ')));
 
-            getSpells(p1actions, p2actions, function(p1spells, p2spells) {
-                console.log(p1spells, p2spells);
+            getSpells(p1actions, p2actions, function(p1spell, p2spell) {
+                // okay, now actually cast the spells
                 go();
             });
         });
@@ -86,45 +86,35 @@ function getSpells(p1actions, p2actions, callback) {
 
     // argh this is ugly
     if (p1spells.length) {
-        var i = 1;
-        msg('Player 1, please choose a spell to cast<br>1. ' +
-            p1spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
-        $(window).on('keydown', function(e) {
-            var n = e.which - 49;
-            if (p1spells[n]) {
-                p1choice = p1spells[n];
-                flash();
-                $(window).off('keydown');
-                if (p2spells.length) {
-                    var i = 1;
-                    msg('Player 2, please choose a spell to cast<br>1. ' +
-                        p2spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
-                    $(window).on('keydown', function(e) {
-                        var n = e.which - 49;
-                        if (p2spells[n]) {
-                            p2choice = p2spells[n];
-                            flash();
-                            $(window).off('keydown');
-                            callback(p1choice, p2choice);
-                        }
-                    });
-                } else callback(p1choice, undefined);
-            }
+        askSpell(1, p1spells, function(p1choice) {
+            if (p2spells.length) {
+                askSpell(2, p2spells, function(p2choice) {
+                    callback(p1choice, p2choice);
+                });
+            } else callback(p1choice, undefined);
         });
     } else if (p2spells.length) {
-        var i = 1;
-        msg('Player 2, please choose a spell to cast<br>1. ' +
-            p2spellnames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
-        $(window).on('keydown', function(e) {
-            var n = e.which - 49;
-            if (p2spells[n]) {
-                p2choice = p2spells[n];
-                flash();
-                $(window).off('keydown');
-                callback(undefined, p2choice);
-            }
+        askSpell(2, p2spells, function(p2choice) {
+            callback(undefined, p2choice);
         });
     } else callback(undefined, undefined);
+}
+
+function askSpell(p, spells, callback) {
+    var spellNames = [];
+    for (var i = 0; i < spells.length; ++i) spellNames.push(spells[i].name);
+
+    var i = 1;
+    msg('Player ' + p + ', please choose a spell to cast<br>1. ' +
+        spellNames.join('<br>*. ').replace(/\*/g, function() { return ++i; }));
+    $(window).on('keydown', function(e) {
+        var n = e.which - 49;
+        if (spells[n]) {
+            flash();
+            $(window).off('keydown');
+            callback(spells[n]);
+        }
+    });
 }
 
 function listSpells(actions) {
