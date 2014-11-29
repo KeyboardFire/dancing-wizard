@@ -34,7 +34,7 @@ function game() {
         p2actions = [];
 
     var go = function() {
-        passTime();
+        update();
 
         getActions(function(p1a, p2a) {
             p1actions.push(p1a);
@@ -58,7 +58,7 @@ function game() {
     go();
 }
 
-function passTime() {
+function update() {
     // TODO time out resistances
 }
 
@@ -198,10 +198,15 @@ function applySpells(target) {
     for (var i = 0; i < target.data('spells').length; ++i) {
         var spell = target.data('spells')[i],
             spellSplit = spell.split('[');
-        var spellType = spellSplit[0];
+        var spellType = spellSplit[0],
+            spellData = new String(spellSplit[1].slice(0, -1));
+
+        // please forgive me
+        spellData.which = spell.which;
+        spellData.pow = spell.pow;
 
         if (!spells[spellType]) spells[spellType] = [];
-        spells[spellType].push(spellSplit[1].slice(0, -1));
+        spells[spellType].push(spellData);
     }
     target.data('spells', []);
 
@@ -234,7 +239,7 @@ function applySpells(target) {
 
                 if (spells.Damage) for (var si = 0; si < spells.Damage.length; ++si) {
                     if ((type == '*' || spells.Damage[si].split(',')[1] == type)
-                        && (spells.Damage[si].level <= pow)) {
+                        && (spells.Damage[si].pow <= pow)) {
                         spells.Damage.splice(si--, 1);
                         continue;
                     }
@@ -247,6 +252,13 @@ function applySpells(target) {
                     }
                 }
             }
+        }
+    }
+
+    if (spells.Damage) {
+        for (var i = 0; i < spells.Damage.length; ++i) {
+            var amt = +(spells.Damage[i].split(',')[0]);
+            target.data('health', target.data('health') - amt);
         }
     }
 
