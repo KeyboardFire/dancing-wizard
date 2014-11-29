@@ -12,7 +12,12 @@ function game() {
             bottom: game.PPX,
             left: (p == 1 ? game.PPX : undefined),
             right: (p == 2 ? game.PPX : undefined)
-        }).text(game.ART['wiz' + p]);
+        }).text(game.ART['wiz' + p]).data({
+            spells: [],
+            health: 20,
+            maxHealth: 20,
+            resist: {Heat: 0, Cold: 0}
+        });
     }, mkg = function(p) {
         return $('<div>').addClass('gestures').appendTo(document.body).css({
             position: 'absolute',
@@ -156,13 +161,63 @@ function castSpell(p, spell, target, callback) {
             duration: 2000
         });
 
+    // remove Target[...] (because now it's always Self)
+    var notation = spell.notation.split(' ').slice(1);
+
+    // Create[] switches context; take that into account
+    // also add a property for which spell this was, in case of Cancel[]
+    var inSwitchedContext = false;
+    for (var i = 0; i < notation.length; ++i) {
+        if (notation[i].slice(0, 6) == 'Create') {
+            inSwitchedContext = true;
+        } else if (inSwitchedContext) {
+            notation[i] = '!' + notation[i];
+        }
+
+        // I am a terrible person. Sorry.
+        notation[i] = new String(notation[i]);
+        notation[i].which = spell.shortname;
+    }
+
     if (!target.data('spells')) target.data('spells', []);
-    target.data('spells', target.data('spells').concat(spell.notation));
+    target.data('spells', target.data('spells').concat(notation));
     callback();
 }
 
 function applySpells(target) {
-    console.log('applySpells', target, target.data('spells'));
+    if (target === undefined) return;
+
+    var spells = {};
+    for (var i = 0; i < target.data('spells').length; ++i) {
+        var spell = target.data('spells')[i],
+            spellSplit = spell.split('[');
+        var spellType = spellSplit[0];
+
+        if (!spells[spellType]) spells[spellType] = [];
+        spells[spellType].push(spellSplit[1].slice(0, -1));
+    }
+    target.data('spells', []);
+
+    if (spells.Resist) {
+        // a resist overrides an un-resist
+        var hasResisted = {Cold: false, Heat: false};
+
+        for (var i = 0; i < spells.Resist.length; ++i) {
+            var args = spells.Resist[i].split(',');
+            var type = args[0],
+                enable = (args[1] ? Boolean(args[1]) : true),
+                len = +(args[2] || '*') || Infinity;
+
+            if (hasResisted[type] && (!enable)) continue;
+            if (enable) hasResisted[type] = true;
+
+            var res = target.data('resist');
+            res[type] = enable ? len : 0;
+            target.data('resist', res);
+        }
+    }
+
+    console.log('applySpells', target, spells);
 }
 
 function listSpells(actions) {
