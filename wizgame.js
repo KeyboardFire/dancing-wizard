@@ -38,7 +38,11 @@ function game() {
             getSpells(p1actions, p2actions, function(p1spell, p1target, p2spell, p2target) {
                 castSpell(1, p1spell, p1target, function() {
                     castSpell(2, p2spell, p2target, function() {
+
+                        applySpells(p1target);
+                        applySpells(p2target);
                         go();
+
                     });
                 });
             });
@@ -152,7 +156,13 @@ function castSpell(p, spell, target, callback) {
             duration: 2000
         });
 
+    if (!target.data('spells')) target.data('spells', []);
+    target.data('spells', target.data('spells').concat(spell.notation));
     callback();
+}
+
+function applySpells(target) {
+    console.log(target, target.data('spells'));
 }
 
 function listSpells(actions) {
