@@ -120,11 +120,11 @@ function askSpell(p, spells, callback) {
                 }).addClass('numberThingy'));
             });
             $(window).off('keydown').on('keydown', function(e) {
-                var n = e.which - 49;
+                var targetN = e.which - 49;
                 flash();
                 $(window).off('keydown');
                 $('.numberThingy').remove();
-                callback(spells[n], game.CREATURES.children().eq(n));
+                callback(spells[n], game.CREATURES.children().eq(targetN));
             });
         }
     });
@@ -162,7 +162,7 @@ function castSpell(p, spell, target, callback) {
 }
 
 function applySpells(target) {
-    console.log(target, target.data('spells'));
+    console.log('applySpells', target, target.data('spells'));
 }
 
 function listSpells(actions) {
