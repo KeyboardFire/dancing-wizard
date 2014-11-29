@@ -262,6 +262,13 @@ function applySpells(target) {
         }
     }
 
+    if (spells.Heal) {
+        for (var i = 0; i < spells.Heal.length; ++i) {
+            var amt = +(spells.Heal[i]);
+            target.data('health', Math.min(target.data('health') + amt, target.data('maxHealth')));
+        }
+    }
+
     console.log('applySpells', target, spells);
 }
 
