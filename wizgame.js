@@ -34,6 +34,8 @@ function game() {
         p2actions = [];
 
     var go = function() {
+        passTime();
+
         getActions(function(p1a, p2a) {
             p1actions.push(p1a);
             p2actions.push(p2a);
@@ -54,6 +56,10 @@ function game() {
         });
     };
     go();
+}
+
+function passTime() {
+    // TODO time out resistances
 }
 
 function getActions(callback) {
@@ -165,7 +171,7 @@ function castSpell(p, spell, target, callback) {
     var notation = spell.notation.split(' ').slice(1);
 
     // Create[] switches context; take that into account
-    // also add a property for which spell this was, in case of Cancel[]
+    // also add a property for which spell this was and which level, in case of Cancel[]
     var inSwitchedContext = false;
     for (var i = 0; i < notation.length; ++i) {
         if (notation[i].slice(0, 6) == 'Create') {
@@ -177,6 +183,7 @@ function castSpell(p, spell, target, callback) {
         // I am a terrible person. Sorry.
         notation[i] = new String(notation[i]);
         notation[i].which = spell.shortname;
+        notation[i].pow = spell.level;
     }
 
     if (!target.data('spells')) target.data('spells', []);
@@ -214,6 +221,32 @@ function applySpells(target) {
             var res = target.data('resist');
             res[type] = enable ? len : 0;
             target.data('resist', res);
+        }
+    }
+
+    if (spells.Cancel) {
+        for (var i = 0; i < spells.Cancel.length; ++i) {
+            var args = spells.Cancel[i].split(',');
+
+            if (args[0].length === 1) {
+                var type = args[0],
+                    pow = +(args[1] || 5);
+
+                if (spells.Damage) for (var si = 0; si < spells.Damage.length; ++si) {
+                    if ((type == '*' || spells.Damage[si].split(',')[1] == type)
+                        && (spells.Damage[si].level <= pow)) {
+                        spells.Damage.splice(si--, 1);
+                        continue;
+                    }
+                }
+            } else {
+                if (spells.Damage) for (var si = 0; si < spells.Damage.length; ++si) {
+                    if (args.indexOf(spells.Damage[si].which) !== -1) {
+                        spells.Damage.splice(si--, 1);
+                        continue;
+                    }
+                }
+            }
         }
     }
 
