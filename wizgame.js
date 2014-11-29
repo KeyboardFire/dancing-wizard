@@ -84,23 +84,19 @@ function getSpells(p1actions, p2actions, callback) {
     for (var i = 0; i < p2spellnames.length; ++i) p2spellnames[i] = p2spellnames[i].name;
     var p1choice, p2choice;
 
-    // argh this is ugly
-    if (p1spells.length) {
-        askSpell(1, p1spells, function(p1choice) {
-            if (p2spells.length) {
-                askSpell(2, p2spells, function(p2choice) {
-                    callback(p1choice, p2choice);
-                });
-            } else callback(p1choice, undefined);
-        });
-    } else if (p2spells.length) {
+    askSpell(1, p1spells, function(p1choice) {
         askSpell(2, p2spells, function(p2choice) {
-            callback(undefined, p2choice);
+            callback(p1choice, p2choice);
         });
-    } else callback(undefined, undefined);
+    });
 }
 
 function askSpell(p, spells, callback) {
+    if (!spells.length) {
+        callback(undefined);
+        return;
+    }
+
     var spellNames = [];
     for (var i = 0; i < spells.length; ++i) spellNames.push(spells[i].name);
 
