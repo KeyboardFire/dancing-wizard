@@ -255,11 +255,8 @@ function applySpells(target) {
         }
     }
 
-    if (spells.Damage) {
-        for (var i = 0; i < spells.Damage.length; ++i) {
-            var amt = +(spells.Damage[i].split(',')[0]);
-            target.data('health', target.data('health') - amt);
-        }
+    if (spells.Reflect) {
+        // TODO
     }
 
     if (spells.Heal) {
@@ -267,6 +264,21 @@ function applySpells(target) {
             var amt = +(spells.Heal[i]);
             target.data('health', Math.min(target.data('health') + amt, target.data('maxHealth')));
         }
+    }
+
+    if (spells.Damage) {
+        for (var i = 0; i < spells.Damage.length; ++i) {
+            var amt = +(spells.Damage[i].split(',')[0]);
+            target.data('health', target.data('health') - amt);
+        }
+    }
+
+    if (spells.Knife) {
+        target.data('health', target.data('health') - amt);
+    }
+
+    if (spells.Kill) {
+        target.data('health', 0);
     }
 
     console.log('applySpells', target, spells);
