@@ -79,11 +79,6 @@ function getActions(callback) {
 
 function getSpells(p1actions, p2actions, callback) {
     var p1spells = listSpells(p1actions), p2spells = listSpells(p2actions);
-    var p1spellnames = p1spells.slice(), p2spellnames = p2spells.slice();
-    for (var i = 0; i < p1spellnames.length; ++i) p1spellnames[i] = p1spellnames[i].name;
-    for (var i = 0; i < p2spellnames.length; ++i) p2spellnames[i] = p2spellnames[i].name;
-    var p1choice, p2choice;
-
     askSpell(1, p1spells, function(p1choice) {
         askSpell(2, p2spells, function(p2choice) {
             callback(p1choice, p2choice);
