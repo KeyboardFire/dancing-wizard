@@ -3,10 +3,11 @@ function game() {
     game.SPELLS = loadSpells();
     game.PADDING = 10;
     game.PPX = game.PADDING + 'px';
+    game.CREATURES = $('<div>').appendTo(document.body);
 
     // create player <pre>s (for ASCII art) and gesture list views
     var mkp = function(p) {
-        return $('<pre>').appendTo(document.body).css({
+        return $('<pre>').appendTo(game.CREATURES).css({
             position: 'absolute',
             bottom: game.PPX,
             left: (p == 1 ? game.PPX : undefined),
@@ -20,9 +21,9 @@ function game() {
             right: (p == 2 ? game.PPX : undefined)
         });
     };
-    var $p1 = mkp(1),
-        $p2 = mkp(2),
-        $p1gestures = mkg(1),
+    game.$P1 = mkp(1);
+    game.$P2 = mkp(2);
+    var $p1gestures = mkg(1),
         $p2gestures = mkg(2),
         p1actions = [],
         p2actions = [];
@@ -34,9 +35,12 @@ function game() {
             $p1gestures.append($('<div>').text(p1a.join(' ')));
             $p2gestures.append($('<div>').text(p2a.join(' ')));
 
-            getSpells(p1actions, p2actions, function(p1spell, p2spell) {
-                // okay, now actually cast the spells
-                go();
+            getSpells(p1actions, p2actions, function(p1spell, p1target, p2spell, p2target) {
+                castSpell(1, p1spell, p1target, function() {
+                    castSpell(2, p2spell, p2target, function() {
+                        go();
+                    });
+                });
             });
         });
     };
@@ -79,16 +83,16 @@ function getActions(callback) {
 
 function getSpells(p1actions, p2actions, callback) {
     var p1spells = listSpells(p1actions), p2spells = listSpells(p2actions);
-    askSpell(1, p1spells, function(p1choice) {
-        askSpell(2, p2spells, function(p2choice) {
-            callback(p1choice, p2choice);
+    askSpell(1, p1spells, function(p1choice, p1target) {
+        askSpell(2, p2spells, function(p2choice, p2target) {
+            callback(p1choice, p1target, p2choice, p2target);
         });
     });
 }
 
 function askSpell(p, spells, callback) {
     if (!spells.length) {
-        callback(undefined);
+        callback(undefined, undefined);
         return;
     }
 
@@ -102,10 +106,53 @@ function askSpell(p, spells, callback) {
         var n = e.which - 49;
         if (spells[n]) {
             flash();
-            $(window).off('keydown');
-            callback(spells[n]);
+            msg('Please choose a target for your spell');
+            game.CREATURES.children().each(function(i) {
+                var $this = $(this);
+                $(document.body).append($('<div>').text(i+1).css({
+                    position: 'absolute',
+                    top: $this.offset().top,
+                    left: $this.offset().left
+                }).addClass('numberThingy'));
+            });
+            $(window).off('keydown').on('keydown', function(e) {
+                var n = e.which - 49;
+                flash();
+                $(window).off('keydown');
+                $('.numberThingy').remove();
+                callback(spells[n], game.CREATURES.children().eq(n));
+            });
         }
     });
+}
+
+function castSpell(p, spell, target, callback) {
+    if (spell === undefined) {
+        callback();
+        return;
+    }
+
+    var $p = game['$P' + p];
+    $p.text(game.ART['wiz' + p + 'pew']);
+    $('<pre>').text(game.ART.pew).css({
+        position: 'absolute',
+        top: $p.offset().top,
+        left: (p == 1) ? ($p.offset().left + $p.width()) : ($p.offset().left)
+    }).appendTo(document.body)
+        .animate({top: game.PADDING}, {duration: 2000})
+        .delay(0)
+        .animate({
+            top: target.offset().top + target.width() / 2,
+            left: target.offset().left + target.height() / 2
+        }, {
+            complete: function() {
+                $(this).remove();
+                game['$P' + p].text(game.ART['wiz' + p]);
+            },
+            duration: 2000
+        });
+
+    callback();
 }
 
 function listSpells(actions) {
