@@ -34,8 +34,6 @@ function game() {
         p2actions = [];
 
     var go = function() {
-        update();
-
         getActions(function(p1a, p2a) {
             p1actions.push(p1a);
             p2actions.push(p2a);
@@ -46,8 +44,11 @@ function game() {
                 castSpell(1, p1spell, p1target, function() {
                     castSpell(2, p2spell, p2target, function() {
 
-                        applySpells(p1target);
-                        applySpells(p2target);
+                        game.CREATURES.children().each(function() {
+                            var $this = $(this);
+                            applySpells($this);
+                            update($this);
+                        });
                         go();
 
                     });
@@ -83,7 +84,7 @@ function getActions(callback) {
         } else if (e.which == 32) {
             // space
             spellList.toggle('slow');
-        } else if ('PFSWOCHK'.indexOf(String.fromCharCode(e.which)) !== -1) {
+        } else if ('PFSWOCHKN'.indexOf(String.fromCharCode(e.which)) !== -1) {
             actions.push(String.fromCharCode(e.which));
             flash();
             if (actions.length == 2) msg('Player 2, please input your actions');
@@ -172,21 +173,20 @@ function castSpell(p, spell, target, callback) {
 
     // Create[] switches context; take that into account
     // also add a property for which spell this was and which level, in case of Cancel[]
-    var inSwitchedContext = false;
+    // also handle Wait and Repeat
     for (var i = 0; i < notation.length; ++i) {
-        if (notation[i].slice(0, 6) == 'Create') {
-            inSwitchedContext = true;
-        } else if (inSwitchedContext) {
-            notation[i] = '!' + notation[i];
-        }
-
-        // I am a terrible person. Sorry.
-        notation[i] = new String(notation[i]);
-        notation[i].which = spell.shortname;
-        notation[i].pow = spell.level;
+        notation[i] = {
+            notation: notation[i],
+            which: spell.shortname,
+            pow: spell.level
+        };
+        // if (notation[i].slice(0, 6) == 'Create') {
+        // } else if (notation[i].slice(0, 4) == 'Wait') {
+        // } else if (notation[i].slice(0, 6) == 'Repeat') {
+        // } else {
+        // }
     }
 
-    if (!target.data('spells')) target.data('spells', []);
     target.data('spells', target.data('spells').concat(notation));
     callback();
 }
@@ -196,26 +196,26 @@ function applySpells(target) {
 
     var spells = {};
     for (var i = 0; i < target.data('spells').length; ++i) {
-        var spell = target.data('spells')[i],
-            spellSplit = spell.split('[');
-        var spellType = spellSplit[0],
-            spellData = new String(spellSplit[1].slice(0, -1));
+        var spell = target.data('spells')[i];
 
-        // please forgive me
-        spellData.which = spell.which;
-        spellData.pow = spell.pow;
+        var spellType = spell.notation.split('[')[0];
+        spell.data = spell.notation.split('[')[1].slice(0, -1);
 
         if (!spells[spellType]) spells[spellType] = [];
         spells[spellType].push(spellData);
     }
     target.data('spells', []);
 
+    if (spells.Create) {
+        // TODO
+    }
+
     if (spells.Resist) {
         // a resist overrides an un-resist
         var hasResisted = {Cold: false, Heat: false};
 
         for (var i = 0; i < spells.Resist.length; ++i) {
-            var args = spells.Resist[i].split(',');
+            var args = spells.Resist[i].data.split(',');
             var type = args[0],
                 enable = (args[1] ? Boolean(args[1]) : true),
                 len = +(args[2] || '*') || Infinity;
@@ -231,14 +231,14 @@ function applySpells(target) {
 
     if (spells.Cancel) {
         for (var i = 0; i < spells.Cancel.length; ++i) {
-            var args = spells.Cancel[i].split(',');
+            var args = spells.Cancel[i].data.split(',');
 
             if (args[0].length === 1) {
                 var type = args[0],
                     pow = +(args[1] || 5);
 
                 if (spells.Damage) for (var si = 0; si < spells.Damage.length; ++si) {
-                    if ((type == '*' || spells.Damage[si].split(',')[1] == type)
+                    if ((type == '*' || spells.Damage[si].data.split(',')[1] == type)
                         && (spells.Damage[si].pow <= pow)) {
                         spells.Damage.splice(si--, 1);
                         continue;
@@ -261,27 +261,25 @@ function applySpells(target) {
 
     if (spells.Heal) {
         for (var i = 0; i < spells.Heal.length; ++i) {
-            var amt = +(spells.Heal[i]);
+            var amt = +(spells.Heal[i].data);
             target.data('health', Math.min(target.data('health') + amt, target.data('maxHealth')));
         }
     }
 
     if (spells.Damage) {
         for (var i = 0; i < spells.Damage.length; ++i) {
-            var amt = +(spells.Damage[i].split(',')[0]);
+            var amt = +(spells.Damage[i].data.split(',')[0]);
             target.data('health', target.data('health') - amt);
         }
     }
 
     if (spells.Knife) {
-        target.data('health', target.data('health') - amt);
+        target.data('health', target.data('health') - 1);
     }
 
     if (spells.Kill) {
         target.data('health', 0);
     }
-
-    console.log('applySpells', target, spells);
 }
 
 function listSpells(actions) {
@@ -366,7 +364,7 @@ function loadArt() {
 
 function loadSpells() {
     var spells;
-    $.ajax({url: 'spells.json', success: function(data) {
+    $.ajax({url: 'spells.json', dataType: 'json', success: function(data) {
         spells = data;
     }, async: false});
     return spells;
