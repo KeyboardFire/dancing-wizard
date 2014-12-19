@@ -174,17 +174,24 @@ function castSpell(p, spell, target, callback) {
     // Create[] switches context; take that into account
     // also add a property for which spell this was and which level, in case of Cancel[]
     // also handle Wait and Repeat
+    var creation = false, waitTime = 0, repeatCount = 0;
     for (var i = 0; i < notation.length; ++i) {
+        var sn = notation[i];
         notation[i] = {
-            notation: notation[i],
+            notation: sn,
             which: spell.shortname,
-            pow: spell.level
+            pow: spell.level,
+            creation: creation,
+            waitTime: waitTime,
+            repeatCount: repeatCount
         };
-        // if (notation[i].slice(0, 6) == 'Create') {
-        // } else if (notation[i].slice(0, 4) == 'Wait') {
-        // } else if (notation[i].slice(0, 6) == 'Repeat') {
-        // } else {
-        // }
+        if (sn.slice(0, 6) == 'Create') {
+            creation = true;
+        } else if (sn.slice(0, 4) == 'Wait') {
+            waitTime = +sn.match(/\d+/)[0];
+        } else if (sn.slice(0, 6) == 'Repeat') {
+            repeatCount = +(sn.match(/\d+/) || [Infinity])[0];
+        }
     }
 
     target.data('spells', target.data('spells').concat(notation));
@@ -194,17 +201,28 @@ function castSpell(p, spell, target, callback) {
 function applySpells(target) {
     if (target === undefined) return;
 
-    var spells = {};
+    var spells = {}, keptSpells = [];
     for (var i = 0; i < target.data('spells').length; ++i) {
         var spell = target.data('spells')[i];
+
+        if (spell.waitTime !== 0) {
+            --spell.waitTime;
+            keptSpells.push(spell);
+            continue;
+        }
+
+        if (spell.repeatCount !== 0) {
+            --spell.repeatCount;
+            keptSpells.push(spell);
+        }
 
         var spellType = spell.notation.split('[')[0];
         spell.data = spell.notation.split('[')[1].slice(0, -1);
 
         if (!spells[spellType]) spells[spellType] = [];
-        spells[spellType].push(spellData);
+        spells[spellType].push(spell);
     }
-    target.data('spells', []);
+    target.data('spells', keptSpells);
 
     if (spells.Create) {
         // TODO
@@ -259,17 +277,17 @@ function applySpells(target) {
         // TODO
     }
 
-    if (spells.Heal) {
-        for (var i = 0; i < spells.Heal.length; ++i) {
-            var amt = +(spells.Heal[i].data);
-            target.data('health', Math.min(target.data('health') + amt, target.data('maxHealth')));
-        }
-    }
-
     if (spells.Damage) {
         for (var i = 0; i < spells.Damage.length; ++i) {
             var amt = +(spells.Damage[i].data.split(',')[0]);
             target.data('health', target.data('health') - amt);
+        }
+    }
+
+    if (spells.Heal) {
+        for (var i = 0; i < spells.Heal.length; ++i) {
+            var amt = +(spells.Heal[i].data);
+            target.data('health', Math.min(target.data('health') + amt, target.data('maxHealth')));
         }
     }
 
